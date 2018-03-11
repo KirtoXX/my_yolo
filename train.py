@@ -1,45 +1,41 @@
-from darknet19 import inference
-from keras import layers
 from keras.models import Model
-from loss import custom_loss
-from keras.optimizers import RMSprop
-import keras.backend as k
+from keras import layers
+import losses
+import yolo
+import dataset
 import tensorflow as tf
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-from utils import parse_annotation
-from utils import data_gen
-from cfg import *
 
+classs = 3
+anchor_box = 5
+down_sample = 32
+input_shape = 416
+output_shape = int(input_shape/down_sample)
 
-image_dir = 'F:/object-detection-crowdai/JPEGImages/'
-ann_dir = 'F:/object-detection-crowdai/Annotations/'
+flags = tf.app.flags
+flags.DEFINE_integer('batch_size',1,'batch_size')
+flags.DEFINE_string('weight','false','weight')
+flags.DEFINE_integer('epoch',50,'epoch')
+flags.DEFINE_float('lr',1e-5,'lr')
+FLAGS = flags.FLAGS
 
-def main():
-    input_image = layers.Input(shape=(416,416, 3))
-    true_boxes = layers.Input(shape=(1, 1, 1,50, 4))
-    logit = inference(input_image)
-    model = Model(input_image,logit)
-    opt = RMSprop()
-    model.compile(loss=custom_loss,optimizer=opt)
-    model.summary()
+def main(_):
+    batch_size = FLAGS.batch_size
+    epoch = FLAGS.epoch
+    weight = FLAGS.weight
+    lr = FLAGS.lr
+    #input = Input(shape=(416,416,3))
+    img,lable = dataset.get_dataset(epoch=epoch,
+                                    batch_size=batch_size)
 
-    sess = k.get_session()
-    writer = tf.summary.FileWriter('log/', sess.graph)
+    inputs = layers.Input(tensor=img)
+    logit = yolo.inference(inputs)
+    model = Model(inputs,logit)
 
-    anns, labels = parse_annotation(ann_dir)
+    model.compile(optimizer='Rmsprop',
+                  loss=losses.custom_loss,
+                  target_tensors=[lable])
 
-
-    early_stop = EarlyStopping(monitor='loss', min_delta=0.001, patience=3, mode='min', verbose=1)
-    checkpoint = ModelCheckpoint('weights.hdf5', monitor='loss', verbose=1, save_best_only=True, mode='min', period=1)
-
-    model.fit_generator(data_gen(anns, BATCH_SIZE),
-                            int(len(anns) / BATCH_SIZE),
-                            epochs=100,
-                            verbose=1,
-                            callbacks=[early_stop],
-                            max_q_size=3)
+    model.fit(epochs=epoch,steps_per_epoch=100,verbose=1)
 
 if __name__ == '__main__':
-    main()
-
-
+    tf.app.run()
