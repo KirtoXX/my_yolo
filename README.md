@@ -9,10 +9,10 @@ Yolov2 implement by keras and TensorFlow </p>
 2.anchor_size = lenght/weight = [1,2,3,0.5,0.3]</p>
 ## exchange from output to real bbox
 assert output[3,4,3,:] = [0.3,0.4,1.2,1.5,0.9,1,0,0]</p>
-anchorbox = 3/1
-x = 3x32+0.3x32
-y = 3x32+0.4x32
-w = 3x1.2
-h = 1x1.5
-confidence = 0.9
-class = 1
+anchorbox = 3/1</p>
+x = 3x32+0.3x32</p>
+y = 3x32+0.4x32</p>
+w = 3x1.2</p>
+h = 1x1.5</p>
+confidence = 0.9</p>
+class = 1</p>
